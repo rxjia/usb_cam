@@ -945,8 +945,8 @@ void UsbCam::init_device(int image_width, int image_height, int framerate)
   stream_params.parm.capture.timeperframe.denominator = framerate;
   if (xioctl(fd_, VIDIOC_S_PARM, &stream_params) < 0)
     ROS_WARN("Couldn't set camera framerate");
-  else
-    ROS_DEBUG("Set framerate to be %i", framerate);
+  else if(stream_params.parm.capture.timeperframe.denominator != framerate)
+    ROS_WARN("Set framerate to be %i", stream_params.parm.capture.timeperframe.denominator);
 
   switch (io_)
   {
@@ -1076,21 +1076,52 @@ void UsbCam::shutdown(void)
 
 void UsbCam::grab_image(sensor_msgs::Image* msg)
 {
-  // grab the image
-  grab_image();
-  // stamp the image
-  msg->header.stamp = ros::Time::now();
-  // fill the info
-  if (monochrome_)
-  {
-    fillImage(*msg, "mono8", image_->height, image_->width, image_->width,
-        image_->image);
-  }
-  else
-  {
-    fillImage(*msg, "rgb8", image_->height, image_->width, 3 * image_->width,
-        image_->image);
-  }
+    // grab the image
+    //grab_image(); //将该函数内容移至此，使时间更准确
+    fd_set fds;
+    struct timeval tv;
+    int r;
+
+    FD_ZERO(&fds);
+    FD_SET(fd_, &fds);
+
+    /* Timeout. */
+    tv.tv_sec = 5;
+    tv.tv_usec = 0;
+
+    r = select(fd_ + 1, &fds, NULL, NULL, &tv);// 调用select监测文件描述符，缓冲区的数据是否填充好，然后对视频数据
+
+    if (-1 == r)
+    {
+        if (EINTR == errno)
+            return;
+
+        errno_exit("select");
+    }
+
+    if (0 == r)
+    {
+        ROS_ERROR("select timeout");
+        exit(EXIT_FAILURE);
+    }
+
+    // stamp the image
+    msg->header.stamp = ros::Time::now();
+
+    read_frame();
+    image_->is_new = 1;
+
+    // fill the info
+    if (monochrome_)
+    {
+        fillImage(*msg, "mono8", image_->height, image_->width, image_->width,
+                  image_->image);
+    }
+    else
+    {
+        fillImage(*msg, "rgb8", image_->height, image_->width, 3 * image_->width,
+                  image_->image);
+    }
 }
 
 void UsbCam::grab_image()
@@ -1106,7 +1137,7 @@ void UsbCam::grab_image()
   tv.tv_sec = 5;
   tv.tv_usec = 0;
 
-  r = select(fd_ + 1, &fds, NULL, NULL, &tv);
+  r = select(fd_ + 1, &fds, NULL, NULL, &tv);// 调用select监测文件描述符，缓冲区的数据是否填充好，然后对视频数据
 
   if (-1 == r)
   {
@@ -1122,7 +1153,7 @@ void UsbCam::grab_image()
     exit(EXIT_FAILURE);
   }
 
-  read_frame();
+  read_frame();//对视频数据进行处理
   image_->is_new = 1;
 }
 

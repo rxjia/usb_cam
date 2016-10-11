@@ -197,7 +197,12 @@ public:
     }
 
     // check auto exposure
-    if (!autoexposure_)
+    if (autoexposure_)
+    {
+      // 1=manual, 3=auto
+      cam_.set_v4l_parameter("exposure_auto", 3);
+    }
+    else
     {
       // turn down exposure control (from max of 3)
       cam_.set_v4l_parameter("exposure_auto", 1);
@@ -250,8 +255,12 @@ public:
       if (cam_.is_capturing()) {
         if (!take_and_send_image()) ROS_WARN("USB camera did not respond in time.");
       }
+//      static ros::Time last;
+//        ros::Time now = ros::Time::now();
+//        std::cout<<(now - last).toSec()<<std::endl;
+//        last = now;
       ros::spinOnce();
-      loop_rate.sleep();
+      //loop_rate.sleep();
 
     }
     return true;
