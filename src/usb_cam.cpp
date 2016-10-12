@@ -1037,7 +1037,7 @@ void UsbCam::start(const std::string& dev, io_method io_method,
 
   open_device();
   init_device(image_width, image_height, framerate);
-  start_capturing();
+  //start_capturing();
 
   image_ = (camera_image_t *)calloc(1, sizeof(camera_image_t));
 
