@@ -347,6 +347,21 @@ static void yuyv2rgb(char *YUV, char *RGB, int NumPixels)
   }
 }
 
+static void yuyv2mono8(char *YUV, char *MONO, int NumPixels)
+{
+  int i, j;
+  unsigned char y0, y1, u, v;
+  unsigned char r, g, b;
+
+  for(i = 0, j = 0; i < (NumPixels << 1); i += 4, j += 2)
+  {
+    y0 = (unsigned char) YUV[i + 0];
+    y1 = (unsigned char) YUV[i + 2];
+    MONO[j + 0] = y0;
+    MONO[j + 1] = y1;
+  }
+}
+
 void rgb242rgb(char *YUV, char *RGB, int NumPixels)
 {
   memcpy(RGB, YUV, NumPixels * 3);
@@ -460,7 +475,10 @@ void UsbCam::process_image(const void * src, int len, camera_image_t *dest)
   {
     if (monochrome_)
     { //actually format V4L2_PIX_FMT_Y16, but xioctl gets unhappy if you don't use the advertised type (yuyv)
-      mono102mono8((char*)src, dest->image, dest->width * dest->height);
+      if(sourceformat_ == PIXEL_FORMAT_YUVMONO8)
+        yuyv2mono8((char *) src, dest->image, dest->width * dest->height);
+      else
+        mono102mono8((char *) src, dest->image, dest->width * dest->height);
     }
     else
     {
@@ -1005,8 +1023,14 @@ void UsbCam::start(const std::string& dev, io_method io_method,
 
   io_ = io_method;
   monochrome_ = false;
+  sourceformat_ = pixel_format;
   if (pixel_format == PIXEL_FORMAT_YUYV)
     pixelformat_ = V4L2_PIX_FMT_YUYV;
+  else if(pixel_format == PIXEL_FORMAT_YUVMONO8)
+  {
+    pixelformat_ = V4L2_PIX_FMT_YUYV;
+    monochrome_ = true;
+  }
   else if (pixel_format == PIXEL_FORMAT_UYVY)
     pixelformat_ = V4L2_PIX_FMT_UYVY;
   else if (pixel_format == PIXEL_FORMAT_MJPEG)
@@ -1256,6 +1280,8 @@ UsbCam::pixel_format UsbCam::pixel_format_from_string(const std::string& str)
 {
     if (str == "yuyv")
       return PIXEL_FORMAT_YUYV;
+    else if(str == "yuyvmono8")
+      return PIXEL_FORMAT_YUVMONO8;
     else if (str == "uyvy")
       return PIXEL_FORMAT_UYVY;
     else if (str == "mjpeg")

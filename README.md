@@ -13,3 +13,7 @@ usb_cam is released with a BSD license. For full terms and conditions, see the [
 
 ### Authors
 See the [AUTHORS](AUTHORS.md) file for a full list of contributors.
+
+sudo apt-get install libswscale-dev
+sudo apt-get install libavcodec-dev
+sudo apt-get install v4l-utils

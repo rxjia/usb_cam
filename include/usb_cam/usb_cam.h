@@ -68,7 +68,14 @@ class UsbCam {
 
   typedef enum
   {
-    PIXEL_FORMAT_YUYV, PIXEL_FORMAT_UYVY, PIXEL_FORMAT_MJPEG, PIXEL_FORMAT_YUVMONO10, PIXEL_FORMAT_RGB24, PIXEL_FORMAT_GREY, PIXEL_FORMAT_UNKNOWN
+      PIXEL_FORMAT_YUYV,
+      PIXEL_FORMAT_UYVY,
+      PIXEL_FORMAT_MJPEG,
+      PIXEL_FORMAT_YUVMONO10,
+      PIXEL_FORMAT_RGB24,
+      PIXEL_FORMAT_GREY,
+      PIXEL_FORMAT_YUVMONO8,
+      PIXEL_FORMAT_UNKNOWN
   } pixel_format;
 
   UsbCam();
@@ -132,6 +139,7 @@ class UsbCam {
 
   std::string camera_dev_;
   unsigned int pixelformat_;
+    unsigned int sourceformat_;
   bool monochrome_;
   io_method io_;
   int fd_;
